@@ -1,0 +1,6 @@
+{
+  "name": "Al Hayaa | الحياء - Luxury Modest Fashion",
+  "description": "Ultra-premium serverless modest fashion boutique for luxury Hijabs & Jilbabs, powered by Nostr decentralized protocol.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

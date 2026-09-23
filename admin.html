@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <title>لوحة إدارة متجر الحياء | Al Hayaa Admin</title>
+    <meta name="description" content="لوحة التحكم اللامركزية لإدارة طلبات ومنتجات وأسعار توصيل متجر الحياء للأزياء المحتشمة." />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body class="bg-[#F8F5EE] text-stone-900 font-body min-h-screen antialiased flex flex-col">
+
+    <!-- LOGIN GATE (Shown when unauthenticated) -->
+    <div id="login-gate" class="flex-1 flex items-center justify-center p-4">
+      <div class="max-w-md w-full bg-white rounded-2xl shadow-xl border border-stone-200 p-8 text-center space-y-6 animate-modal">
+        <div>
+          <div class="text-3xl font-bold font-brand text-stone-900 mb-1">الحَيَاء</div>
+          <div class="text-xs text-[#9A7B4F] uppercase tracking-widest font-semibold">بوابة إدارة المتجر اللامركزية</div>
+          <p class="text-xs text-stone-500 mt-3 leading-relaxed">
+            اللوحة مشفرة بالكامل وتتصل مباشرة بشبكة Nostr بدون خادم تقليدي. لتسجيل الدخول، استخدمي إضافة المتصفح أو مفتاحك الخاص.
+          </p>
+        </div>
+
+        <div id="login-error" class="text-xs text-red-600 font-medium empty:hidden"></div>
+
+        <div class="space-y-3">
+          <!-- Method 1: Extension (NIP-07) -->
+          <button 
+            type="button" 
+            onclick="window.loginWithExtension()"
+            class="w-full py-3 px-4 bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center justify-center gap-2"
+          >
+            <svg class="w-4 h-4 text-[#DFCEB5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+            </svg>
+            <span>الدخول عبر إضافة المتصفح (Alby / nos2x)</span>
+          </button>
+
+          <div class="flex items-center gap-2 text-xs text-stone-400 py-1">
+            <span class="flex-1 border-t border-stone-200"></span>
+            <span>أو بواسطة المفتاح الخاص</span>
+            <span class="flex-1 border-t border-stone-200"></span>
+          </div>
+
+          <!-- Method 2: nsec input -->
+          <div class="space-y-2 text-right">
+            <input 
+              type="password" 
+              id="admin-nsec-input" 
+              placeholder="nsec1... أو مفتاح hex (64 رمز)" 
+              dir="ltr"
+              class="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-xs font-mono focus:bg-white focus:outline-none focus:border-stone-900"
+            />
+            <button 
+              type="button" 
+              onclick="window.loginWithKey(document.getElementById('admin-nsec-input').value)"
+              class="w-full py-2.5 px-4 bg-[#C5A880] hover:bg-[#9A7B4F] text-stone-950 font-bold text-xs rounded-xl transition-colors"
+            >
+              تسجيل الدخول بالمفتاح
+            </button>
+          </div>
+
+          <div class="pt-2 border-t border-stone-100">
+            <!-- Method 3: Instant Demo Key -->
+            <button 
+              type="button" 
+              onclick="window.loginWithDemoKey()"
+              class="w-full py-2 px-3 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
+            >
+              <span>🔑 تجربة فورية بمفتاح المتجر التجريبي</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="text-[11px] text-stone-400">
+          <a href="/" class="hover:text-stone-700">← العودة إلى واجهة المتجر الرئيسية</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN ADMIN DASHBOARD (Shown when authenticated) -->
+    <div id="admin-dashboard" class="hidden flex-1 flex flex-col">
+      
+      <!-- Admin Top Navbar -->
+      <header class="bg-white border-b border-stone-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <a href="/" class="text-xl font-bold font-brand text-stone-900 flex items-center gap-2">
+              <span>الحَيَاء</span>
+              <span class="text-[11px] px-2 py-0.5 rounded bg-stone-100 text-[#9A7B4F] font-sans font-semibold">إدارة المتجر</span>
+            </a>
+            <a href="/" target="_blank" class="text-xs text-stone-500 hover:text-stone-900 hidden sm:inline-flex items-center gap-1">
+              <span>معاينة المتجر</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+
+          <!-- Profile & Logout -->
+          <div class="flex items-center gap-3">
+            <div class="text-xs bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1 text-stone-600 font-mono hidden md:block">
+              Npub: <span id="admin-npub-display"></span>
+            </div>
+            <button 
+              type="button" 
+              onclick="window.logoutAdmin()"
+              class="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
+            >
+              خروج
+            </button>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex border-t border-stone-100 overflow-x-auto">
+          <button 
+            type="button" 
+            class="admin-nav-tab px-4 py-2.5 text-xs font-bold text-stone-900 border-b-2 border-[#9A7B4F] bg-stone-50 flex items-center gap-2 whitespace-nowrap"
+            data-tab="orders"
+            onclick="window.switchTab('orders')"
+          >
+            <span>📦 إدارة الطلبات</span>
+          </button>
+          <button 
+            type="button" 
+            class="admin-nav-tab px-4 py-2.5 text-xs font-medium text-stone-500 hover:text-stone-900 flex items-center gap-2 whitespace-nowrap"
+            data-tab="products"
+            onclick="window.switchTab('products')"
+          >
+            <span>👗 إدارة المنتجات والأجلبة</span>
+          </button>
+          <button 
+            type="button" 
+            class="admin-nav-tab px-4 py-2.5 text-xs font-medium text-stone-500 hover:text-stone-900 flex items-center gap-2 whitespace-nowrap"
+            data-tab="settings"
+            onclick="window.switchTab('settings')"
+          >
+            <span>⚙️ أسعار التوصيل & FB Pixel</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Dashboard Container -->
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+        
+        <!-- TAB 1: ORDERS MANAGEMENT -->
+        <div id="tab-orders" class="space-y-6">
+          
+          <!-- Summary Stats -->
+          <div id="orders-stats-bar">
+            <!-- Populated dynamically by admin.js -->
+          </div>
+
+          <!-- Controls & Filters Bar -->
+          <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            
+            <!-- Filters -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button 
+                type="button" 
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 text-white"
+                onclick="window.adminState.ordersFilter = 'all'; window.renderOrdersTable();"
+              >
+                الكل
+              </button>
+              <button 
+                type="button" 
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700"
+                onclick="window.adminState.ordersFilter = 'pending'; window.renderOrdersTable();"
+              >
+                قيد الانتظار
+              </button>
+              <button 
+                type="button" 
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700"
+                onclick="window.adminState.ordersFilter = 'confirmed'; window.renderOrdersTable();"
+              >
+                مؤكد للشحن
+              </button>
+            </div>
+
+            <!-- Search & Actions -->
+            <div class="flex items-center gap-3">
+              <input 
+                type="text" 
+                placeholder="بحث باسم الزبونة، الهاتف، أو رقم الطلب..." 
+                oninput="window.adminState.ordersSearch = this.value; window.renderOrdersTable();"
+                class="px-3 py-1.5 text-xs border border-stone-300 rounded-lg w-64 focus:outline-none focus:border-stone-900"
+              />
+              <button 
+                type="button" 
+                onclick="window.refreshOrders()"
+                class="p-2 border border-stone-300 hover:bg-stone-50 rounded-lg text-stone-700 transition-colors"
+                title="تحديث من خوادم Nostr"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+              </button>
+              <button 
+                type="button" 
+                onclick="window.exportOrdersCSV()"
+                class="px-3 py-1.5 bg-[#C5A880] hover:bg-[#9A7B4F] text-stone-950 text-xs font-bold rounded-lg transition-colors whitespace-nowrap"
+              >
+                تصدير إلى Excel / CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Orders Table Container -->
+          <div id="orders-table-container">
+            <!-- Populated dynamically by admin.js -->
+          </div>
+        </div>
+
+        <!-- TAB 2: PRODUCTS MANAGEMENT -->
+        <div id="tab-products" class="hidden space-y-8">
+          
+          <!-- Product Creation / Editing Form -->
+          <div id="product-form-section" class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+            <div class="flex items-center justify-between pb-4 border-b border-stone-200 mb-6">
+              <div>
+                <h3 class="text-lg font-bold text-stone-900">إضافة أو تعديل منتج على Nostr</h3>
+                <p class="text-xs text-stone-500">يتم نشر المنتجات كأحداث قابلة للاستبدال (Kind 30402 - NIP-99) وتخصيص رابط فريد لكل منتج.</p>
+              </div>
+              <button 
+                type="button" 
+                onclick="window.resetProductForm()"
+                class="text-xs text-stone-500 hover:text-stone-900"
+              >
+                إفراغ الحقول
+              </button>
+            </div>
+
+            <form id="product-upsert-form" onsubmit="window.handleProductSubmit(event)" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold text-stone-800 mb-1">اسم المنتج *</label>
+                  <input type="text" id="prod-title" required placeholder="مثال: جلباب حرير المدينة الزمردي" class="w-full p-2.5 border rounded-lg text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-800 mb-1">المعرف الفريد (Slug للرابط) *</label>
+                  <input type="text" id="prod-slug" required placeholder="jilbab-emeraude-2026" class="w-full p-2.5 border rounded-lg text-xs font-mono" dir="ltr" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-stone-800 mb-1">السعر بالدينار الجزائري (DZD) *</label>
+                  <input type="number" id="prod-price" required min="0" placeholder="8900" class="w-full p-2.5 border rounded-lg text-xs font-num" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-800 mb-1">التصنيف *</label>
+                  <select id="prod-category" class="w-full p-2.5 border rounded-lg text-xs">
+                    <option value="جلباب قطعتين">جلباب قطعتين</option>
+                    <option value="جلباب قطعة واحدة">جلباب قطعة واحدة</option>
+                    <option value="طقم حجاب">طقم حجاب</option>
+                    <option value="عباءة ملكية">عباءة ملكية</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-800 mb-1">نوع القماش</label>
+                  <input type="text" id="prod-fabric" placeholder="حرير المدينة الأصلي" class="w-full p-2.5 border rounded-lg text-xs" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-stone-800 mb-1">الألوان المتوفرة (مفصولة بفاصلة)</label>
+                  <input type="text" id="prod-colors" placeholder="أسود داكن, زمردي, بيج رملي" class="w-full p-2.5 border rounded-lg text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-800 mb-1">المقاسات (مفصولة بفاصلة)</label>
+                  <input type="text" id="prod-sizes" placeholder="مقاس 1 (155-163 سم), مقاس 2 (164-172 سم)" class="w-full p-2.5 border rounded-lg text-xs" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-stone-800 mb-1">روابط الصور (رابط في كل سطر)</label>
+                <textarea id="prod-images" rows="2" placeholder="https://images.unsplash.com/photo-..." class="w-full p-2.5 border rounded-lg text-xs font-mono" dir="ltr"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-stone-800 mb-1">وصف المنتج ومواصفات الخياطة</label>
+                <textarea id="prod-desc" rows="3" placeholder="اكتبي وصفاً دقيقاً وجذاباً للقطعة..." class="w-full p-2.5 border rounded-lg text-xs"></textarea>
+              </div>
+
+              <div class="pt-3">
+                <button 
+                  type="submit" 
+                  id="publish-product-btn"
+                  class="py-3 px-6 bg-stone-900 hover:bg-[#9A7B4F] text-white text-xs font-bold rounded-xl transition-colors shadow"
+                >
+                  حفظ ونشر المنتج عبر Nostr (Kind 30402)
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Product Catalog List -->
+          <div>
+            <h3 class="text-base font-bold text-stone-900 mb-4">المنتجات الحالية في المتجر</h3>
+            <div id="products-admin-list" class="space-y-3">
+              <!-- Populated dynamically by admin.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: STORE SETTINGS & FB PIXEL -->
+        <div id="tab-settings" class="hidden space-y-8">
+          
+          <form onsubmit="window.handleSettingsSave(event)" class="space-y-8">
+            
+            <!-- 1. Facebook Pixel Card -->
+            <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-4">
+              <div class="flex items-center gap-2 pb-3 border-b border-stone-200">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                <h3 class="text-base font-bold text-stone-900">تكامل Facebook Pixel</h3>
+              </div>
+              <p class="text-xs text-stone-500 leading-relaxed">
+                يتم حقن كود Meta Pixel ديناميكياً في واجهة المتجر وتتبع أحداث المشاهدة وإتمام الشراء (Purchase) تلقائياً بالدينار الجزائري (DZD).
+              </p>
+
+              <div class="flex flex-col sm:flex-row gap-3 items-end">
+                <div class="flex-1">
+                  <label class="block text-xs font-semibold text-stone-800 mb-1">Facebook Pixel ID (معرّف البكسل)</label>
+                  <input 
+                    type="text" 
+                    id="setting-pixel-id" 
+                    placeholder="مثال: 984512347612984" 
+                    class="w-full p-2.5 border rounded-lg text-xs font-mono"
+                    dir="ltr"
+                  />
+                </div>
+                <button 
+                  type="button" 
+                  onclick="window.testFacebookPixel()"
+                  class="py-2.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap"
+                >
+                  ⚡ اختبار البكسل (Test Pixel)
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Delivery Pricing Matrix -->
+            <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-6">
+              <div class="flex items-center gap-2 pb-3 border-b border-stone-200">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#C5A880]"></span>
+                <h3 class="text-base font-bold text-stone-900">أسعار التوصيل (باب المنزل ومكتب الاستلام)</h3>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-stone-800 mb-1">السعر الافتراضي لباب المنزل (دج)</label>
+                  <input type="number" id="setting-default-home" value="600" class="w-full p-2.5 border rounded-lg text-xs font-num" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-800 mb-1">السعر الافتراضي لمكتب التوصيل (دج)</label>
+                  <input type="number" id="setting-default-office" value="350" class="w-full p-2.5 border rounded-lg text-xs font-num" />
+                </div>
+              </div>
+
+              <!-- Wilaya Overrides Table -->
+              <div>
+                <h4 class="text-xs font-bold text-stone-800 mb-2">تخصيص الأسعار حسب الولاية:</h4>
+                <div class="max-h-72 overflow-y-auto border border-stone-200 rounded-xl">
+                  <table class="w-full text-right text-xs">
+                    <thead class="bg-stone-50 border-b border-stone-200 sticky top-0">
+                      <tr>
+                        <th class="py-2.5 px-3">الولاية</th>
+                        <th class="py-2.5 px-3">سعر باب المنزل</th>
+                        <th class="py-2.5 px-3">سعر المكتب</th>
+                      </tr>
+                    </thead>
+                    <tbody id="wilaya-overrides-tbody" class="divide-y divide-stone-100">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Office Communes Manager -->
+            <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-4">
+              <div class="flex items-center gap-2 pb-3 border-b border-stone-200">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                <h3 class="text-base font-bold text-stone-900">البلديات المعتمدة لمكاتب التوصيل (Office Communes)</h3>
+              </div>
+              <p class="text-xs text-stone-500">
+                عندما تختار الزبونة "مكتب التوصيل" في نموذج الطلب، ستظهر لها فقط البلديات المحددة أدناه التي يتوفر بها مكتب استلام شريك.
+              </p>
+
+              <div id="office-communes-container" class="space-y-4 max-h-96 overflow-y-auto pr-1">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="pt-4">
+              <button 
+                type="submit" 
+                id="save-settings-btn"
+                class="w-full sm:w-auto py-3.5 px-8 bg-stone-900 hover:bg-[#9A7B4F] text-white text-xs font-bold rounded-xl transition-all shadow-md"
+              >
+                حفظ الإعدادات بأمان على Nostr (NIP-78)
+              </button>
+            </div>
+          </form>
+
+        </div>
+
+      </main>
+    </div>
+
+    <!-- Edit Order Modal -->
+    <div id="edit-order-modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+      <div class="bg-white max-w-md w-full rounded-2xl p-6 shadow-2xl border border-stone-200 animate-modal">
+        <div id="edit-order-modal-content"></div>
+      </div>
+    </div>
+
+    <!-- Admin Logic Script -->
+    <script type="module" src="/admin.js"></script>
+  </body>
+</html>
